@@ -37,7 +37,7 @@ pub enum BotMessage {
     Suggestion {
         moves: Vec<Placement>,
         move_info: MoveInfo,
-    }
+    },
 }
 
 #[derive(Deserialize)]

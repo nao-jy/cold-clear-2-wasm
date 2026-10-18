@@ -8,9 +8,23 @@ interaction with a frontend, such as [Quadspace](https://github.com/SoRA-X7/Quad
 ## Technical Features
 
 - Column-major bitboards
-- Multithreaded search
+- WebAssembly interface using the Tetris Bot Protocol message types
 - Transposition-aware game tree
 - MCTS-inspired tree expansion
+
+## WebAssembly
+
+Build the library for the `wasm32-unknown-unknown` target and use
+`wasm-bindgen` to generate JavaScript bindings. `initialize()` returns the
+Tetris Bot Protocol `info` message. Pass protocol messages to
+`process_message(message)`; it returns the corresponding bot message, or
+`null` when there is no response.
+
+`configure(config)` accepts the bot configuration object before starting a
+game. Search runs synchronously in WebAssembly: call `think(iterations)` to
+spend a chosen number of search iterations, then send a `suggest` message to
+get the current suggestion. A suggestion request performs one search iteration
+automatically if no search has been done since the last start or play message.
 
 ## License
 
