@@ -1,9 +1,18 @@
 use enumset::{EnumSet, EnumSetType};
 use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use tsify::Tsify;
 
 use crate::data::{Board, Piece, Placement};
 
 #[derive(Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(
+    target_arch = "wasm32",
+    tsify(
+        type = "{ type: 'rules' } | ({ type: 'start' } & Start) | { type: 'play'; move: Placement } | { type: 'new_piece'; piece: Piece } | { type: 'suggest' } | { type: 'stop' } | { type: 'quit' } | { type: string; [key: string]: unknown }"
+    )
+)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum FrontendMessage {
@@ -24,6 +33,7 @@ pub enum FrontendMessage {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum BotMessage {
@@ -41,6 +51,7 @@ pub enum BotMessage {
 }
 
 #[derive(Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct Start {
     pub board: Board,
     pub queue: Vec<Piece>,
@@ -52,11 +63,19 @@ pub struct Start {
 }
 
 #[derive(Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(
+    target_arch = "wasm32",
+    tsify(
+        type = "{ type: 'seven_bag'; bag_state: Piece[] } | { type: string; [key: string]: unknown }"
+    )
+)]
 #[serde(rename_all = "snake_case")]
 #[serde(tag = "type")]
 pub enum Randomizer {
     SevenBag {
         #[serde(deserialize_with = "collect_enumset")]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "Piece[]"))]
         bag_state: EnumSet<Piece>,
     },
     #[serde(other)]
@@ -70,6 +89,7 @@ impl Default for Randomizer {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct MoveInfo {
     pub nodes: u64,
     pub nps: f64,

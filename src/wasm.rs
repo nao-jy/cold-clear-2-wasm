@@ -2,12 +2,17 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use enumset::EnumSet;
-use serde::de::DeserializeOwned;
+use tsify::{Ts, Tsify};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsError;
 
 use crate::bot::{Bot, BotConfig, BotOptions, Statistics};
 use crate::data::GameState;
 use crate::tbp::{BotMessage, FrontendMessage, MoveInfo, Randomizer, Start};
+
+#[derive(serde::Serialize, Tsify)]
+#[serde(transparent)]
+pub struct MessageResponse(Option<BotMessage>);
 
 thread_local! {
     static RUNTIME: RefCell<Runtime> = RefCell::new(Runtime::default());
@@ -25,28 +30,29 @@ struct Runtime {
 }
 
 #[wasm_bindgen]
-pub fn initialize() -> Result<JsValue, JsValue> {
-    serialize(&BotMessage::Info {
+pub fn initialize() -> Result<Ts<BotMessage>, JsError> {
+    Ok(BotMessage::Info {
         name: "Cold Clear 2",
         version: concat!(env!("CARGO_PKG_VERSION"), " ", env!("GIT_HASH")),
         author: "MinusKelvin",
         features: &[],
-    })
+    }
+    .into_ts()?)
 }
 
 #[wasm_bindgen]
-pub fn configure(config: JsValue) -> Result<(), JsValue> {
-    let config: BotConfig = deserialize(config)?;
+pub fn configure(config: Ts<BotConfig>) -> Result<(), JsError> {
+    let config = config.to_rust()?;
     RUNTIME.with(|runtime| runtime.borrow_mut().config = Some(Arc::new(config)));
     Ok(())
 }
 
 #[wasm_bindgen]
-pub fn process_message(message: JsValue) -> Result<JsValue, JsValue> {
-    let message: FrontendMessage = deserialize(message)?;
-    RUNTIME.with(|runtime| {
+pub fn process_message(message: Ts<FrontendMessage>) -> Result<Ts<MessageResponse>, JsError> {
+    let message = message.to_rust()?;
+    let output = RUNTIME.with(|runtime| {
         let mut runtime = runtime.borrow_mut();
-        let output = match message {
+        match message {
             FrontendMessage::Start(start) => {
                 if start.hold.is_none() && start.queue.is_empty() {
                     runtime.waiting_on_first_piece = Some(start);
@@ -100,13 +106,13 @@ pub fn process_message(message: JsValue) -> Result<JsValue, JsValue> {
             }
             FrontendMessage::Rules => Some(BotMessage::Ready),
             FrontendMessage::Unknown => None,
-        };
-        serialize(&output)
-    })
+        }
+    });
+    Ok(MessageResponse(output).into_ts()?)
 }
 
 #[wasm_bindgen]
-pub fn think(iterations: u32) -> Result<JsValue, JsValue> {
+pub fn think(iterations: u32) -> Result<Ts<MoveInfo>, JsError> {
     RUNTIME.with(|runtime| {
         let mut runtime = runtime.borrow_mut();
         let stats = match runtime.bot.as_ref() {
@@ -117,11 +123,11 @@ pub fn think(iterations: u32) -> Result<JsValue, JsValue> {
                 }
                 stats
             }
-            None => return Err(JsValue::from_str("Bot has not been started")),
+            None => return Err(JsError::new("Bot has not been started")),
         };
         runtime.stats.accumulate(stats);
         runtime.nodes_since_start += stats.nodes;
-        serialize(&move_info(&runtime))
+        Ok(move_info(&runtime).into_ts()?)
     })
 }
 
@@ -188,14 +194,4 @@ fn move_info(runtime: &Runtime) -> MoveInfo {
 
 fn now() -> f64 {
     js_sys::Date::now()
-}
-
-fn deserialize<T: DeserializeOwned>(value: JsValue) -> Result<T, JsValue> {
-    serde_wasm_bindgen::from_value(value).map_err(|error| JsValue::from_str(&error.to_string()))
-}
-
-fn serialize<T: serde::Serialize>(value: &T) -> Result<JsValue, JsValue> {
-    let serializer = serde_wasm_bindgen::Serializer::new().serialize_missing_as_null(true);
-    serde::Serialize::serialize(value, &serializer)
-        .map_err(|error| JsValue::from_str(&error.to_string()))
 }

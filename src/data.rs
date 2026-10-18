@@ -1,8 +1,12 @@
 use enum_map::Enum;
 use enumset::{EnumSet, EnumSetType};
 use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use tsify::Tsify;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(type = "Array<Array<string | null>>"))]
 #[serde(from = "Vec<[Option<char>; 10]>")]
 pub struct Board {
     pub cols: [u64; 10],
@@ -18,6 +22,7 @@ pub struct GameState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct PieceLocation {
     #[serde(rename = "type")]
     pub piece: Piece,
@@ -28,6 +33,7 @@ pub struct PieceLocation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct Placement {
     pub location: PieceLocation,
     pub spin: Spin,
@@ -44,6 +50,7 @@ pub struct PlacementInfo {
 
 #[allow(clippy::derive_hash_xor_eq)]
 #[derive(EnumSetType, Enum, Debug, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub enum Piece {
     I,
     O,
@@ -55,6 +62,7 @@ pub enum Piece {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[serde(rename_all = "snake_case")]
 pub enum Rotation {
     North,
@@ -64,6 +72,7 @@ pub enum Rotation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 #[serde(rename_all = "snake_case")]
 pub enum Spin {
     None,

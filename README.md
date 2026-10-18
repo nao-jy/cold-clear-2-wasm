@@ -18,13 +18,18 @@ Build the library for the `wasm32-unknown-unknown` target and use
 `wasm-bindgen` to generate JavaScript bindings. `initialize()` returns the
 Tetris Bot Protocol `info` message. Pass protocol messages to
 `process_message(message)`; it returns the corresponding bot message, or
-`null` when there is no response.
+`null` when there is no response. Generated TypeScript declarations include
+the protocol message and configuration types.
 
 `configure(config)` accepts the bot configuration object before starting a
 game. Search runs synchronously in WebAssembly: call `think(iterations)` to
-spend a chosen number of search iterations, then send a `suggest` message to
+spend a chosen number of search iterations, then send a `suggest` message tv
 get the current suggestion. A suggestion request performs one search iteration
 automatically if no search has been done since the last start or play message.
+
+### Build Command
+
+`wasm-pack build --target web --release`
 
 ## License
 

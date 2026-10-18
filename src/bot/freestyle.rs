@@ -4,6 +4,8 @@ use enum_map::EnumMap;
 use enumset::EnumSet;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use tsify::Tsify;
 
 use super::{BotOptions, Mode, ModeSwitch, Statistics};
 use crate::dag::{ChildData, Dag, Evaluation};
@@ -97,6 +99,7 @@ impl Mode for Freestyle {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct Weights {
     pub cell_coveredness: f32,
     pub max_cell_covered_height: u32,

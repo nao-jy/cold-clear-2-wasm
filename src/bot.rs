@@ -4,6 +4,8 @@ use std::sync::Arc;
 use enum_dispatch::enum_dispatch;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+#[cfg(target_arch = "wasm32")]
+use tsify::Tsify;
 
 use crate::data::{GameState, Piece, Placement};
 
@@ -19,6 +21,7 @@ pub struct Bot {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(target_arch = "wasm32", derive(Tsify))]
 pub struct BotConfig {
     pub freestyle_weights: freestyle::Weights,
     pub freestyle_exploitation: f64,
